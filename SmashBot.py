@@ -2,7 +2,10 @@ import discord
 import logging
 from discord.ext import commands
 
+<<<<<<< HEAD:SmashBot.py
 import Games.Tris as tris
+=======
+>>>>>>> b27e6619cdb8bcf8b1f62343763b36b7c1e499b4:SmashBot
 
 # Setting up log handler. This will save log entries on discord.log file
 
