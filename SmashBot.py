@@ -2,7 +2,7 @@ import discord
 import logging
 from discord.ext import commands
 
-DISCORD_TOKEN = "MTA5Nzk1MDkwODcyNzQyNzE3NQ.GVCTee.-JBSfj6mrCSAtKq_bkqeWimv2ptLJq81dpAT4Y"
+import Games.Tris as tris
 
 # Setting up log handler. This will save log entries on discord.log file
 
@@ -32,6 +32,7 @@ async def test(ctx):
 @bot.command()
 async def sus(ctx, arg):
     await ctx.send(f'{arg} is sus')
+
 
 # Executing the bot
 
