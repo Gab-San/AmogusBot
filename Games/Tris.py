@@ -19,20 +19,27 @@ import GameLogic
     Definire una classe tris in cui sono definite tutte le funzioni e attributi utili per lavorare con una matrice di tris.
     È possibile implementare:
         - [Low] Nome/Codice della matrice (per avere più istanze e ricordarsi le vecchie partite)
-        - [High] Mossa Successiva
-        - [High] Controllo della mossa
+        > CHK [High] Mossa Successiva 
+        > CHK [High] Controllo della mossa
         - [Medium] Reset della matrice
-        - [High] Elminiazione della matrice una volta finita la partita 
+        - [High] Eliminiazione della matrice una volta finita la partita 
 
 """
 
+class TrisPlayer(GameLogic.Player):
+    def __init__(self, name, number, character):
+        super().__init__(name, number)
+        self.character = character
+    
+    def __str__(self) -> str:
+        return f'{self.name} is playing with {self.character}'
 
 
 def ParseInput(input_move) -> tuple:
     input_move = input_move.strip()
 
-    if len(input_move) != 2 and input_move[0].lower() not in ['a', 'b', 'c'] and input_move[1] not in ['1', '2', '3']:
-        raise Exception("Wrong Movement Format")
+    if len(input_move) != 2:
+        raise SyntaxError("Wrong Movement Format")
     
 
     match input_move[0].lower():
@@ -50,53 +57,71 @@ def ParseInput(input_move) -> tuple:
     return (row, column)
 
 
-
-def StartNewGame() -> None:
-    confirmStart = input("Premere [Y] per iniziare una nuova partita" + "\n" + 
-                         "Premere [N] per interrompere\n\n")
-    
-    if(confirmStart == 'N'): exit()
-
-def __CheckWinner() -> None:
+def Endgame(playerid) -> None:
+    print(f'{playerid.upper()} WON THE GAME!')
     exit()
 
-
-
 class TrisMatch:
+
+    characters = ['X','O']
+
     def __init__(self) -> None:
         self.matrix = [[0,0,0],[0,0,0],[0,0,0]]; # Initializing current Tris Matrix #
         self.players = []
 
     def RegisterPlayers(self) -> None:
         for i in range (1,3):
-            currPl_name = input(f'Giocatore numero {i}: ')
-            self.players.append(GameLogic.Player(currPl_name, i))
+            currPl_name = input(f'Player #{i}: ')
+            self.players.append(TrisPlayer(currPl_name, i, self.characters[i-1]))
         
         for _ in self.players:
             print(_)
             
         print("\n")
-       
+    
+    def ChangePlayer(self, player_number) -> int:
+        player_number = (player_number + 1) % 2
+        return player_number
 
-    def PlayMove(self, currentMove, player_number) -> int:
+    def PlayMove(self, currentMove, character) -> None:
         # verifying if the move is plausible #
         if(self.matrix[currentMove[0]][currentMove[1]] != 0 ):
             raise Exception("Occupied Tile")
         
-        self.matrix[currentMove[0]][currentMove[1]] = player_number
+        self.matrix[currentMove[0]][currentMove[1]] = character
 
-        player_number = (player_number + 1) % 2
-        return player_number
+        for i in range (0,3):
+            for j in range (0,3):
+                print(f'[{self.matrix[i][j]}] at {i},{j}')
+            print("\n")
+      
+    
+    def CheckWinner(self, player, sign) -> None:
+        if (self.matrix[0][0] == sign and self.matrix[0][1] == sign and self.matrix[0][2] == sign):
+            Endgame(player.name)
+        if(self.matrix[0][0] == sign and self.matrix[1][1] == sign and self.matrix[2][2] == sign):
+            Endgame(player.name)
+        if(self.matrix[0][0] == sign and self.matrix[1][0] == sign and self.matrix[2][0] == sign):
+            Endgame(player.name)
+        if(self.matrix[0][1] == sign and self.matrix[1][1] == sign and self.matrix[2][1] == sign):
+            Endgame(player.name)
+        if(self.matrix[0][2] == sign and self.matrix[1][2] == sign and self.matrix[2][2] == sign):
+            Endgame(player.name)
+        if(self.matrix[0][2] == sign and self.matrix[1][1] == sign and self.matrix[2][0] == sign):
+            Endgame(player.name)
+        if(self.matrix[1][0] == sign and self.matrix[1][1] == sign and self.matrix[1][2] == sign):
+            Endgame(player.name)
+        if(self.matrix[2][0] == sign and self.matrix[2][1] == sign and self.matrix[2][2] == sign):
+            Endgame(player.name)
+        
 
 
-
-
-
+# REDO THE WINNING CONDITION #
 
 # Game Logic#
 def main() -> None:
 
-    StartNewGame()
+    GameLogic.StartNewGame()
 
     while True:
         tris = TrisMatch()
@@ -104,13 +129,26 @@ def main() -> None:
         nextPlayer = 0
 
         while True:
-            print(f'Gioca {tris.players[nextPlayer]}\n')
-            nextMove = input("Quale casella vuoi occupare?\n\n")
-            nextMove = ParseInput(nextMove)
-            print(str(nextMove) + "\n")
-            nextPlayer = tris.PlayMove(nextMove, nextPlayer)
+            print(f'{tris.players[nextPlayer]}\n')
 
-
+            while True:
+                try:
+                    while True:
+                        nextMove = input("Which tile do u wanna mark?\n\n")
+                        try:
+                            nextMove = ParseInput(nextMove)
+                            break
+                        except (SyntaxError, Exception) as err:
+                            print(f'{err}: Correct format is [letter][number]\n' +
+                                  "letter must be either a, b or c\nnumber must be a number between 1 and 3\n")
+                    print(str(nextMove) + "\n")
+                    tris.PlayMove(nextMove, tris.players[nextPlayer].character)
+                    break
+                except Exception as error:
+                    print(f'Error: {error}... Choose another move\n')
+    
+            tris.CheckWinner(tris.players[nextPlayer], tris.players[nextPlayer].character)
+            nextPlayer = tris.ChangePlayer(nextPlayer)
 
 
 
