@@ -26,6 +26,40 @@ import GameLogic
 
 """
 
+# define constants #
+
+MAX_ROW = 3
+FIRST_COL = 'a'
+MAX_PLAYERNUMBER = 2
+
+
+def AlgebraicToComputer(input_move) -> tuple:
+    input_move = input_move.strip()
+
+    if len(input_move) != 2:
+        raise SyntaxError("Wrong Movement Format")
+    
+    row = MAX_ROW - int(input_move[1]) # 3 - 1 = 2 which is the last row #
+    col = ord(input_move[0].lower()) - ord(FIRST_COL)
+
+    print(f'{(row,col)} is the move you chose')
+    return (row, col)
+
+def VerifyMove(input_move) -> tuple:
+    if (input_move[0] < 0 or input_move[0] > 2) or (input_move[1] < 0 or input_move[1] > 2):
+        raise ValueError("Move Out Of Bounds")
+
+def __Endgame(playerid, end_condition) -> bool:
+    
+    match end_condition:
+        case 0: GameLogic.Endgame(playerid)
+        case 1: print(f'The game was tied')
+        case _: print(f'For some reason the game has Ended')
+    
+    return True
+
+
+
 class TrisPlayer(GameLogic.Player):
     def __init__(self, name, number, character):
         super().__init__(name, number)
@@ -35,85 +69,82 @@ class TrisPlayer(GameLogic.Player):
         return f'{self.name} is playing with {self.character}'
 
 
-def ParseInput(input_move) -> tuple:
-    input_move = input_move.strip()
-
-    if len(input_move) != 2:
-        raise SyntaxError("Wrong Movement Format")
-    
-
-    match input_move[0].lower():
-        case 'a': column = 0
-        case 'b': column = 1
-        case 'c': column = 2
-        case _: raise Exception("Move out of bounds")
-
-    match input_move[1].lower():
-        case '1': row = 0
-        case '2': row = 1
-        case '3': row = 2
-        case _: raise Exception("Move out of bounds")
-
-    return (row, column)
-
-
-def Endgame(playerid) -> None:
-    print(f'{playerid.upper()} WON THE GAME!')
-    exit()
-
-class TrisMatch:
+class TrisMatch(GameLogic.Game):
 
     characters = ['X','O']
 
-    def __init__(self) -> None:
+    def __init__(self, player_number) -> None:
+        super().__init__(player_number)
         self.matrix = [[0,0,0],[0,0,0],[0,0,0]]; # Initializing current Tris Matrix #
-        self.players = []
+        self.num_of_plays = 0
 
     def RegisterPlayers(self) -> None:
-        for i in range (1,3):
-            currPl_name = input(f'Player #{i}: ')
-            self.players.append(TrisPlayer(currPl_name, i, self.characters[i-1]))
-        
+        for i in range (0, self.player_number):
+            currPl_name = input(f'Player #{i + 1}: ')
+            self.players.append(TrisPlayer(currPl_name, i, self.characters[i]))
+
         for _ in self.players:
             print(_)
-            
         print("\n")
     
     def ChangePlayer(self, player_number) -> int:
         player_number = (player_number + 1) % 2
         return player_number
 
-    def PlayMove(self, currentMove, character) -> None:
-        # verifying if the move is plausible #
+    def Place(self, currentMove, character) -> None:
+        # Verifying if the move is possible #
+        try:
+            VerifyMove(currentMove)
+        except ValueError as error:
+            raise error
+        
         if(self.matrix[currentMove[0]][currentMove[1]] != 0 ):
             raise Exception("Occupied Tile")
         
+        # If the play is possible than complete the move #
         self.matrix[currentMove[0]][currentMove[1]] = character
+        self.num_of_plays += 1 # Updating the number of moves (see isFull()) #
 
+    def CheckWin(self, currentMove, char) -> bool:
+        if(self.num_of_plays < 4): return False # With less than 4 moves it's impossible to win # 
+        return self.__CheckWinRows(currentMove[0], char) or self.__CheckWinColumns(currentMove[1], char) or self.__CheckWinDiags(char)
+
+
+    def __CheckWinRows(self, row, char) -> bool:
         for i in range (0,3):
-            for j in range (0,3):
-                print(f'[{self.matrix[i][j]}] at {i},{j}')
-            print("\n")
-      
-    
-    def CheckWinner(self, player, sign) -> None:
-        if (self.matrix[0][0] == sign and self.matrix[0][1] == sign and self.matrix[0][2] == sign):
-            Endgame(player.name)
-        if(self.matrix[0][0] == sign and self.matrix[1][1] == sign and self.matrix[2][2] == sign):
-            Endgame(player.name)
-        if(self.matrix[0][0] == sign and self.matrix[1][0] == sign and self.matrix[2][0] == sign):
-            Endgame(player.name)
-        if(self.matrix[0][1] == sign and self.matrix[1][1] == sign and self.matrix[2][1] == sign):
-            Endgame(player.name)
-        if(self.matrix[0][2] == sign and self.matrix[1][2] == sign and self.matrix[2][2] == sign):
-            Endgame(player.name)
-        if(self.matrix[0][2] == sign and self.matrix[1][1] == sign and self.matrix[2][0] == sign):
-            Endgame(player.name)
-        if(self.matrix[1][0] == sign and self.matrix[1][1] == sign and self.matrix[1][2] == sign):
-            Endgame(player.name)
-        if(self.matrix[2][0] == sign and self.matrix[2][1] == sign and self.matrix[2][2] == sign):
-            Endgame(player.name)
+            if(self.matrix[row][i] != char):
+                return False
+        return True # If loop arrives here it means that all char on the row were equal #
+                
+
+    def __CheckWinColumns(self, col, char) -> bool:
+        for i in range (0,3):
+            if(self.matrix[i][col] != char):
+                return False
+        return True # If loop arrives here it means that all char on the col were equal #
         
+
+    def __CheckWinDiags(self, char) -> bool:
+        return self.__CheckDirDiags(char) or self.__CheckIndDiags(char)
+    
+    def __CheckDirDiags(self, char) -> bool:
+        for (i,j) in [(0,0), (1,1), (2,2)]:
+            if(self.matrix[i][j] != char):
+                return False
+        return True
+    
+    def __CheckIndDiags(self, char) -> bool:
+        for (i,j) in [(0,2), (1,1), (2,0)]:
+            if(self.matrix[i][j] != char):
+                return False
+        return True
+
+    def isFull(self) -> bool:
+        return (self.num_of_plays >= 9)   
+
+                
+
+
 
 
 # REDO THE WINNING CONDITION #
@@ -122,35 +153,40 @@ class TrisMatch:
 def main() -> None:
 
     GameLogic.StartNewGame()
+    gameHasEnded = False
+    tris = TrisMatch(MAX_PLAYERNUMBER) 
+    tris.RegisterPlayers()
 
-    while True:
-        tris = TrisMatch()
-        tris.RegisterPlayers()
-        nextPlayer = 0
+    while not gameHasEnded:
+        for i in tris.players :
+            print(f'{i}\n')
+            acceptedMove = False
 
-        while True:
-            print(f'{tris.players[nextPlayer]}\n')
-
-            while True:
+            while not acceptedMove:
+                currentMove = input("Which tile do you want to mark?\n\n")
                 try:
-                    while True:
-                        nextMove = input("Which tile do u wanna mark?\n\n")
-                        try:
-                            nextMove = ParseInput(nextMove)
-                            break
-                        except (SyntaxError, Exception) as err:
-                            print(f'{err}: Correct format is [letter][number]\n' +
-                                  "letter must be either a, b or c\nnumber must be a number between 1 and 3\n")
-                    print(str(nextMove) + "\n")
-                    tris.PlayMove(nextMove, tris.players[nextPlayer].character)
-                    break
-                except Exception as error:
-                    print(f'Error: {error}... Choose another move\n')
-    
-            tris.CheckWinner(tris.players[nextPlayer], tris.players[nextPlayer].character)
-            nextPlayer = tris.ChangePlayer(nextPlayer)
+                    currentMove = AlgebraicToComputer(currentMove)
+                except SyntaxError as err:
+                    print(f'{err}: Correct format is [letter][number]\n')
+                    continue
 
+                # At this point the move is in the correct format and has been translated #
+                try:
+                    tris.Place(currentMove, i.character)
+                    acceptedMove = True
+                except (ValueError, Exception) as err:
+                    print(f'Error: {err}...\nChoose another move\n')
+                    acceptedMove = False
+            
+            # At this point the move has been registered #
 
+            if( tris.CheckWin(currentMove, i.character) ):
+                gameHasEnded = __Endgame(i.name, 0) # 0 is the winning condition #
+                break
+
+            if( tris.isFull() ):
+                gameHasEnded = __Endgame(i.name, 1) # 1 is the tie condition #
+                break
 
 
 
