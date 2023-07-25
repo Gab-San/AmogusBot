@@ -1,11 +1,8 @@
 import discord
 import logging
+import json
 from discord.ext import commands
 
-<<<<<<< HEAD:SmashBot.py
-import Games.Tris as tris
-=======
->>>>>>> b27e6619cdb8bcf8b1f62343763b36b7c1e499b4:SmashBot
 
 # Setting up log handler. This will save log entries on discord.log file
 
@@ -27,16 +24,39 @@ async def on_ready():
           f'\n\nVerified: {bot.user.verified}'
           f'\nCreated: {bot.user.created_at}\n')
 
-
-@bot.command()
-async def test(ctx):
-    await ctx.send("Test")
-
 @bot.command()
 async def sus(ctx, arg):
     await ctx.send(f'{arg} is sus')
 
+@bot.command()
+async def play(ctx, cmd):
+    await bot.load_extension(cmd)
+
+@bot.command()
+async def chkcmd(ctx, cmd):
+    command = discord.utils.find(lambda comm: str(comm) == cmd, bot.commands) 
+    if command:
+        await ctx.send("Command Found")
+    else:
+        await ctx.send("Command Not Found")
+
+@bot.event
+async def on_message(message):
+    if message.author.bot:
+        return
+
+    print(message)
+    await bot.process_commands(message)
 
 # Executing the bot
 
-bot.run(DISCORD_TOKEN, log_handler=handler)
+def main():
+    TOKENFILE = "token-config.json"
+
+    with open(TOKENFILE, 'r') as infile:
+        config = json.load(infile)
+
+    bot.run(config['token'], log_handler=handler)
+
+if __name__ == '__main__':
+    main()

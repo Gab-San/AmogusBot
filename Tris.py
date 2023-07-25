@@ -1,8 +1,9 @@
-###### TRIS PROJECT ######
-
 __title__ = 'Tris'
 
 import GameLogic
+from discord.ext import commands 
+
+###### TRIS PROJECT ######
 
 """
     Disegnare lo schema del tris, da fare su bot discord sul messaggio inviato.
@@ -26,11 +27,25 @@ import GameLogic
 
 """
 
+# Comandi del bot
+
+@commands.command()
+async def playtris(ctx):
+    await ctx.send(f'Hello {ctx.author.display_name}.\nWant to play some tris?')
+
+async def setup(referencebot):
+    referencebot.add_command(playtris)
+
+
 # define constants #
 
 MAX_ROW = 3
 FIRST_COL = 'a'
 MAX_PLAYERNUMBER = 2
+
+
+
+# Utility Functions
 
 
 def AlgebraicToComputer(input_move) -> tuple:
@@ -42,7 +57,7 @@ def AlgebraicToComputer(input_move) -> tuple:
     row = MAX_ROW - int(input_move[1]) # 3 - 1 = 2 which is the last row #
     col = ord(input_move[0].lower()) - ord(FIRST_COL)
 
-    print(f'{(row,col)} is the move you chose')
+    print(f'{(row,col)} is the move you chose\n')
     return (row, col)
 
 def VerifyMove(input_move) -> tuple:
@@ -59,6 +74,7 @@ def __Endgame(playerid, end_condition) -> bool:
     return True
 
 
+# Tris Game Subclasses
 
 class TrisPlayer(GameLogic.Player):
     def __init__(self, name, number, character):
@@ -105,6 +121,14 @@ class TrisMatch(GameLogic.Game):
         self.matrix[currentMove[0]][currentMove[1]] = character
         self.num_of_plays += 1 # Updating the number of moves (see isFull()) #
 
+        self.__DisplayMatrix()
+
+    def __DisplayMatrix(self) -> None:
+        for i in range (0,3):
+            for j in range (0,3):
+                print(f'[{self.matrix[i][j]}]',end=" ")
+            print("\n")
+
     def CheckWin(self, currentMove, char) -> bool:
         if(self.num_of_plays < 4): return False # With less than 4 moves it's impossible to win # 
         return self.__CheckWinRows(currentMove[0], char) or self.__CheckWinColumns(currentMove[1], char) or self.__CheckWinDiags(char)
@@ -143,13 +167,9 @@ class TrisMatch(GameLogic.Game):
         return (self.num_of_plays >= 9)   
 
                 
+# Tris Game Implemenation #
 
 
-
-
-# REDO THE WINNING CONDITION #
-
-# Game Logic#
 def main() -> None:
 
     GameLogic.StartNewGame()
@@ -192,3 +212,16 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+
+'''
+[Rework] [Up-Next] [High] 
+The interaction between bot and user will change completely the structure of the game and the use of function
+
+The main pillars of the implementation are:
+    - How to display the tris board
+    - How to interact and get info about the messages
+    - How to define the challenger
+
+'''
